@@ -1,0 +1,16 @@
+name: "web-tests"
+description:
+    "Web-tests is a set of performance tests for browsers."
+
+third_party {
+homepage: "https://chromium.googlesource.com/chromium/web-tests"
+  identifier {
+    type: "Git"
+    value: "https://chromium.googlesource.com/chromium/web-tests"
+    primary_source: true
+    version: "d56ded25b4f5dd6ccbf56cb5c5ad35977dad5e8e"
+  }
+  version: "d56ded25b4f5dd6ccbf56cb5c5ad35977dad5e8e"
+  last_upgrade_date { year: 2025 month: 3 day: 25 }
+  license_type: NOTICE
+}
