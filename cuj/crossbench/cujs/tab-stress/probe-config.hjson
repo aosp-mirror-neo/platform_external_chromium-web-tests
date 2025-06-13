@@ -1,0 +1,35 @@
+// Copyright 2025 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+{
+  template: ../../probe-config.hjson
+  args: {
+    TRACE_PROCESSOR_QUERIES: [
+      {
+        name: Total Renderers
+        sql:
+          '''
+            include PERFETTO MODULE sql_packages.cujs.tab_stress.total_renderers;
+            SELECT * FROM total_renderers_output;
+          '''
+      }
+      {
+        template: ../../common-metrics/uma_histogram_count.hjson
+        args: {
+          NAME: Discarding.DiscardingProtectedTab
+        }
+      }
+      {
+        template: ../../common-metrics/uma_histogram_count.hjson
+        args: {
+          NAME: Discarding.DiscardingFocusedTab
+        }
+      }
+      ../../common-metrics/lmk_kill_list.hjson
+      ../../common-metrics/lmk_kill_count.hjson
+      ../../common-metrics/tab_open_latency.hjson
+      ../../common-metrics/meminfo_total.hjson
+    ]
+    TRACE_CONFIG: ../../trace-config/long-running-trace-config.pbtxt
+  }
+}

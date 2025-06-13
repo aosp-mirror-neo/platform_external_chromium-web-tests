@@ -1,16 +1,21 @@
-name: "web-tests"
-description:
-    "Web-tests is a set of performance tests for browsers."
+# This project was upgraded with external_updater.
+# Usage: tools/external_updater/updater.sh update external/chromium-web-tests
+# For more info, check https://cs.android.com/android/platform/superproject/main/+/main:tools/external_updater/README.md
 
+name: "web-tests"
+description: "Web-tests is a set of performance tests for browsers."
 third_party {
-homepage: "https://chromium.googlesource.com/chromium/web-tests"
+  license_type: NOTICE
+  last_upgrade_date {
+    year: 2025
+    month: 6
+    day: 13
+  }
+  homepage: "https://chromium.googlesource.com/chromium/web-tests"
   identifier {
     type: "Git"
     value: "https://chromium.googlesource.com/chromium/web-tests"
+    version: "67bdc9f0d7e8d50edc5dd97b75066b5dda609fe9"
     primary_source: true
-    version: "d56ded25b4f5dd6ccbf56cb5c5ad35977dad5e8e"
   }
-  version: "d56ded25b4f5dd6ccbf56cb5c5ad35977dad5e8e"
-  last_upgrade_date { year: 2025 month: 3 day: 25 }
-  license_type: NOTICE
 }
