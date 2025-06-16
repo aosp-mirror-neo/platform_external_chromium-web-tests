@@ -1,3 +1,0 @@
-{
-    flags: "--request-desktop-sites --autoplay-policy=no-user-gesture-required --disable-background-media-suspend --disable-notifications"
-}

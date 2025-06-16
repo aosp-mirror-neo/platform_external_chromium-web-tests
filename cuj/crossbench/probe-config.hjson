@@ -1,0 +1,20 @@
+// Copyright 2025 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+{
+  probes: {
+    screenshot: {}
+    dump_html: {}
+    trace_processor: {
+      queries: $[TRACE_PROCESSOR_QUERIES]
+      module_paths: [
+        ./sql_packages
+      ]
+    }
+    perfetto: {
+      textproto: $[TRACE_CONFIG]
+    }
+    downloads: {}
+    meminfo: {}
+  }
+}
