@@ -3,26 +3,19 @@
 -- found in the LICENSE file.
 -- Get the ts for the start of each page load.
 -- row_number() will be the tab open index.
-drop view if exists page_load_start;
+DROP VIEW IF EXISTS page_load_start;
 
-create view
-  page_load_start as
-select
+CREATE VIEW page_load_start AS
+SELECT
   *
-from
-  (
-    select
-      row_number() over (
-        order by
-          ts
-      ) as id,
-      ts as page_load_start,
-      extract_arg (arg_set_id, 'debug.data.detail') as detail
-    from
-      slice
-    where
-      category = 'blink.user_timing'
-      and name = 'page-load'
-  )
-order by
+FROM (
+  SELECT
+    row_number() OVER (ORDER BY ts) AS id,
+    ts AS page_load_start,
+    extract_arg(arg_set_id, 'debug.data.detail') AS detail
+  FROM slice
+  WHERE
+    category = 'blink.user_timing' AND name = 'page-load'
+)
+ORDER BY
   id;
