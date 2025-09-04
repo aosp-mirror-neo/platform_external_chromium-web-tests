@@ -1,1 +1,6 @@
-include platform/system/core:main:/janitors/OWNERS
+kalutes@google.com
+cwd@google.com
+chinglinyu@google.com
+sxm@google.com
+cbruni@google.com
+include platform/system/core:main:/janitors/OWNERS #{LAST_RESORT_SUGGESTION}
