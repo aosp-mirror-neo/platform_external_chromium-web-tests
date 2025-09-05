@@ -5,18 +5,32 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import platform
 import subprocess
-from typing import List
-
+from pathlib import Path
 
 USE_PYTHON3 = True
+
+SOURCE_SKIP_RE = [r"^protoc/gen.*", r"^third_party/.*"]
+
+
+def GlobalSkipChecks(input_api, file_path: str):
+  if input_api.fnmatch.fnmatch(file_path, "*protoc/gen/*"):
+    return True
+  if input_api.fnmatch.fnmatch(file_path, "*third_party/*"):
+    return True
+  return False
 
 
 def CheckChange(input_api, output_api):
   tests = []
   results = []
+  modified_hjson_files: list[str] | None = ModifiedFiles(
+      input_api, filename_pattern="*.hjson")
+  modified_sql_files: list[str] | None = ModifiedFiles(
+      input_api, filename_pattern="*.sql")
+  modified_py_files: list[str] | None = ModifiedFiles(
+      input_api, filename_pattern="*.py")
   # ---------------------------------------------------------------------------
   # Validate the vpython spec:
   # ---------------------------------------------------------------------------
@@ -38,58 +52,74 @@ def CheckChange(input_api, output_api):
           x, files_to_check=files_to_check))
 
   # ---------------------------------------------------------------------------
-  # hjson:
-  # ---------------------------------------------------------------------------
-  for hjson_file in AllHjsonFiles(input_api):
-    try:
-      formatted_contents: str = FormatHjsonFile(input_api, hjson_file)
-    except ValueError as e:
-      results.append(
-          output_api.PresubmitPromptWarning(
-              "Malformed hjson file:",
-              items=[str(hjson_file)],
-              long_text=str(e)))
-      continue
-
-    original_contents = input_api.ReadFile(str(hjson_file), "r")
-
-    if original_contents != formatted_contents:
-      results.append(
-          output_api.PresubmitPromptWarning(
-              "Unformatted hjson file:",
-              items=[str(hjson_file)],
-              long_text=(
-                  "Run format_hjson.py to automatically fix this error.\n"
-                  f"Expected:\n{formatted_contents}"
-                  f"Got:\n{original_contents}")))
-
-  # ---------------------------------------------------------------------------
-  # crossbench:
-  # ---------------------------------------------------------------------------
-  dry_run_py_path = str(
-      Path(input_api.change.RepositoryRoot()) / "cuj" / "crossbench" /
-      "runner" / "run.py")
-  tests.append(
-      input_api.Command(
-          name="crossbench dry run",
-          cmd=[
-              input_api.python3_executable, dry_run_py_path, "--platform=local",
-              "--dry-run"
-          ],
-          message=output_api.PresubmitError,
-          kwargs={},
-          python3=True,
-      ))
-
-  # ---------------------------------------------------------------------------
   # Pylint:
   # ---------------------------------------------------------------------------
   tests += input_api.canned_checks.GetPylint(
       input_api,
       output_api,
       files_to_check=[r"^[^\.]+\.py$"],
+      files_to_skip=SOURCE_SKIP_RE,
       pylintrc=".pylintrc",
       version="3.2")
+
+  # ---------------------------------------------------------------------------
+  # MyPy:
+  # ---------------------------------------------------------------------------
+  mypy_files_to_check: list[str] = MypyFilesToCheck(input_api,
+                                                    modified_py_files)
+  tests.append(
+      input_api.Command(
+          name="mypy",
+          cmd=[
+              input_api.python3_executable,
+              "-m",
+              "mypy",
+              "--check-untyped-defs",
+              "--pretty",
+          ] + mypy_files_to_check,
+          message=output_api.PresubmitError,
+          kwargs={},
+          python3=True,
+      ))
+
+  # ---------------------------------------------------------------------------
+  # isort:
+  # ---------------------------------------------------------------------------
+  SortImports(input_api, output_api, results, modified_py_files)
+
+  # ---------------------------------------------------------------------------
+  # hjson:
+  # ---------------------------------------------------------------------------
+  FormatFiles(input_api, output_api, results, modified_hjson_files,
+              FormatHjsonFile)
+
+  # ---------------------------------------------------------------------------
+  # sql:
+  # ---------------------------------------------------------------------------
+  FormatFiles(input_api, output_api, results, modified_sql_files, FormatSqlFile)
+
+  # ---------------------------------------------------------------------------
+  # crossbench:
+  # ---------------------------------------------------------------------------
+  runner_path = str(
+      Path(input_api.change.RepositoryRoot()) / "cuj" / "crossbench" /
+      "runner" / "run.py")
+  tests.append(
+      input_api.Command(
+          name="crossbench dry run",
+          cmd=[
+              input_api.python3_executable,
+              runner_path,
+              "--platform=local",
+              "--dry-run",
+              # Loadline does not cooporate with --dry-run, so ignore it.
+              "--tests",
+              "^(?!.*loadline).*$"
+          ],
+          message=output_api.PresubmitError,
+          kwargs={},
+          python3=True,
+      ))
 
   # ---------------------------------------------------------------------------
   # Run all test
@@ -98,33 +128,107 @@ def CheckChange(input_api, output_api):
   return results
 
 
-def AllHjsonFiles(input_api) -> List[Path]:
-  hjson_files = []
-  for file in input_api.change.AllFiles():
-    if file.endswith(".hjson"):
-      hjson_files.append(Path(input_api.change.RepositoryRoot()) / file)
+def ModifiedFiles(input_api, filename_pattern: str) -> list[str] | None:
+  files = [file.AbsoluteLocalPath() for file in input_api.AffectedFiles()]
+  files_to_check = []
+  for file_path in files:
+    if not input_api.fnmatch.fnmatch(file_path, filename_pattern):
+      continue
+    if not input_api.os_path.exists(file_path):
+      continue
+    file_path = input_api.os_path.relpath(file_path,
+                                          input_api.PresubmitLocalPath())
+    files_to_check.append(file_path)
+  return files_to_check
 
-  return hjson_files
+
+def MypyFilesToCheck(input_api, modified_py_files) -> list[str]:
+  mypy_files_to_check = {"PRESUBMIT.py"}
+  mypy_files_to_check.update(modified_py_files)
+
+  result = []
+  for file in mypy_files_to_check:
+    if GlobalSkipChecks(input_api, file):
+      continue
+    result.append(file)
+  return result
 
 
-def FormatHjsonFile(input_api, hjson_file: Path) -> str:
+def SortImports(input_api, output_api, results, modified_py_files):
+  for py_file in (modified_py_files or []):
+    full_py_path = Path(input_api.change.RepositoryRoot()) / py_file
+    original_contents = input_api.ReadFile(str(full_py_path), "r")
+    subprocess.run([input_api.python_executable, "-m", "isort", full_py_path],
+                   check=True)
+    formatted_contents = input_api.ReadFile(str(full_py_path), "r")
+    if original_contents != formatted_contents:
+      results.append(
+          output_api.PresubmitPromptWarning(
+              "Unsorted python imports in file:",
+              items=[str(full_py_path)],
+              long_text="Please update your commit with the formatted file."))
+
+
+def FormatFiles(input_api, output_api, results, modified_files, format_func):
+  for file in (modified_files or []):
+    full_path = Path(input_api.change.RepositoryRoot()) / file
+
+    original_contents = input_api.ReadFile(str(full_path), "r")
+
+    try:
+      format_func(input_api, full_path)
+      formatted_contents = input_api.ReadFile(str(full_path), "r")
+    except ValueError as e:
+      results.append(
+          output_api.PresubmitPromptWarning(
+              "Malformed file:", items=[str(full_path)], long_text=str(e)))
+      continue
+
+    if original_contents != formatted_contents:
+      results.append(
+          output_api.PresubmitPromptWarning(
+              "Unformatted file:",
+              items=[str(full_path)],
+              long_text="Please update your commit with the formatted file."))
+
+
+def FormatHjsonFile(input_api, hjson_file: Path) -> None:
   node_bin = str(
       Path(input_api.change.RepositoryRoot()) /
       "third_party/node/linux/node-linux-x64/bin/node")
+
   hjson_js_bin = str(
-      Path(input_api.change.RepositoryRoot()) /
-      "third_party/hjson_js/bin/hjson")
+      Path(input_api.change.RepositoryRoot()) / "third_party" / "hjson_js" /
+      "bin" / "hjson")
 
   try:
-    return subprocess.run([
-        node_bin, hjson_js_bin, "-rt", "-sl", "-nocol", "-cond=0",
-        str(hjson_file)
-    ],
-                          check=True,
-                          capture_output=True).stdout.decode(encoding="utf-8")
+    formatted = subprocess.run(
+        [
+            node_bin, hjson_js_bin, "-rt", "-sl", "-nocol", "-cond=0",
+            str(hjson_file)
+        ],
+        check=True,
+        capture_output=True).stdout.decode(encoding="utf-8")
+    hjson_file.write_text(formatted)
   except subprocess.CalledProcessError as e:
     error = e.stderr.decode(encoding="utf=8")
     raise ValueError(f"Failed to parse hjson file: {error}") from e
+
+
+def FormatSqlFile(input_api, sql_file: Path) -> None:
+  perfetto_sql_formatter = str(
+      Path(input_api.change.RepositoryRoot()) / "third_party" / "perfetto" /
+      "tools" / "format-sql-sources")
+  try:
+    subprocess.run(
+        [perfetto_sql_formatter, str(sql_file)],
+        check=True,
+        capture_output=True,
+        cwd=(Path(input_api.change.RepositoryRoot()) / "third_party" /
+             "perfetto"))
+  except subprocess.CalledProcessError as e:
+    error = e.stderr.decode(encoding="utf=8")
+    raise ValueError(f"Failed to parse sql file: {error}") from e
 
 
 def CheckChangeOnUpload(input_api, output_api):
