@@ -36,6 +36,7 @@ java_genrule_host {
     srcs: [
         "cuj/**/*",
         "synthetic/**/*",
+        "tools/**/*",
     ],
     out: ["chromium-web-tests.zip"],
     cmd: "$(location soong_zip) -o $(out) -C external -D external",
