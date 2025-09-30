@@ -35,6 +35,7 @@ java_genrule_host {
     ],
     srcs: [
         "cuj/**/*",
+        "docs/**/*",
         "synthetic/**/*",
         "tools/**/*",
     ],
