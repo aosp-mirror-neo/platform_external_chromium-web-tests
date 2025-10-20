@@ -26,6 +26,11 @@
           condition: return document.querySelector('video#video').ended
           timeout: 60s
         }
+        $[...ADDITIONAL_ACTIONS]
+        {
+          action: js
+          path: ./scripts/dropped_frames.js
+        }
       ]
     }
   }

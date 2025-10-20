@@ -8,6 +8,7 @@
       url: $[URL]
       target: $[TARGET]
       ready_state: complete
+      timeout: 2m
     }
     {
       action: close_tab
@@ -16,6 +17,15 @@
       action: meminfo
       system: true
       title: closed
+    }
+  ]
+  teardown: [
+    {
+      action: probe
+      probe: dump_heap
+      kwargs: {
+        type: java
+      }
     }
   ]
 }

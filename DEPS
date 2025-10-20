@@ -42,17 +42,18 @@ vars = {
   'crossbench_git': 'https://chromium.googlesource.com/crossbench',
   'chromium_webpagereplay_git': 'https://chromium.googlesource.com/webpagereplay',
   'hjson_js_git': 'https://chromium.googlesource.com/external/github.com/hjson/hjson-js',
+  'perfetto_git': 'https://chromium.googlesource.com/external/github.com/google/perfetto.git',
   # This variable is overridden in Chromium's DEPS file.
   'build_with_chromium': False,
 
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
-  'crossbench_revision': '2badae0da648e1acee24d83da074d02e33faa632',
+  'crossbench_revision': '6874c86567d94cdb017c4b8dadf646a48c68c3a8',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
-  'webpagereplay_revision': '2c5049abfc2cf36ece82f7f84ebdcb786659eaf7',
+  'webpagereplay_revision': '9057e5d942f2bfcee71cc20415a7f86c966241f8',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
@@ -86,6 +87,8 @@ deps = {
         },
     ],
   },
+  'third_party/perfetto':
+    Var('perfetto_git') + '@' + '7a9a6a0587348bffd1796b66a1da33cc1ea421d8',
 }
 
 
@@ -102,5 +105,10 @@ hooks = [
     'name': 'wpr_archives',
     'pattern': '.',
     'action': ['cuj/crossbench/wpr/wpr-setup.sh']
+  },
+  {
+    'name': 'perfetto_venv',
+    'pattern': '.',
+    'action': ['third_party/perfetto/tools/install-build-deps', '--ui']
   }
 ]
