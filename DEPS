@@ -49,7 +49,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
-  'crossbench_revision': '6874c86567d94cdb017c4b8dadf646a48c68c3a8',
+  'crossbench_revision': 'c30c6ff7a08c0d3e2964bf304779dde3c51f5a42',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
@@ -88,7 +88,7 @@ deps = {
     ],
   },
   'third_party/perfetto':
-    Var('perfetto_git') + '@' + '7a9a6a0587348bffd1796b66a1da33cc1ea421d8',
+    Var('perfetto_git') + '@' + '52dc460cd7840c4b948d6151fe9a60dfc583df35',
 }
 
 

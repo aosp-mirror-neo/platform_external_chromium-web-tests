@@ -9,13 +9,13 @@ third_party {
   last_upgrade_date {
     year: 2025
     month: 11
-    day: 6
+    day: 18
   }
   homepage: "https://chromium.googlesource.com/chromium/web-tests"
   identifier {
     type: "Git"
     value: "https://chromium.googlesource.com/chromium/web-tests"
-    version: "9ab0375afe2ee2821dfb1634afd1d2957a186ca4"
+    version: "7e46f9a905fb29c2bd8d56bc7dbe8f7789b3a47d"
     primary_source: true
   }
 }
