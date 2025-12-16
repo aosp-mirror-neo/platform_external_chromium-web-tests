@@ -49,7 +49,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
-  'crossbench_revision': 'aac006fd9958c032ad000d3cdc768401952a4ca3',
+  'crossbench_revision': 'c9e590b503b61a9696d502ae01c0b3d257fd3103',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
@@ -91,8 +91,13 @@ deps = {
     Var('perfetto_git') + '@' + '52dc460cd7840c4b948d6151fe9a60dfc583df35',
 }
 
-
-hooks = [
+# Contains hooks necessary to run web-tests
+pre_deps_hooks = [
+    {
+    'name': 'wpr_archives',
+    'pattern': '.',
+    'action': ['cuj/crossbench/wpr/wpr-setup.sh']
+  },
   {
     'name': 'vpython3_common',
     'pattern': '.',
@@ -101,11 +106,10 @@ hooks = [
                 '-vpython-tool', 'install',
     ],
   },
-  {
-    'name': 'wpr_archives',
-    'pattern': '.',
-    'action': ['cuj/crossbench/wpr/wpr-setup.sh']
-  },
+]
+
+# Contains hooks necessary to develop web-tests
+hooks = [
   {
     'name': 'perfetto_venv',
     'pattern': '.',
