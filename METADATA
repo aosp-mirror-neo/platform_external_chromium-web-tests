@@ -8,14 +8,14 @@ third_party {
   license_type: NOTICE
   last_upgrade_date {
     year: 2026
-    month: 1
-    day: 26
+    month: 2
+    day: 2
   }
   homepage: "https://chromium.googlesource.com/chromium/web-tests"
   identifier {
     type: "Git"
     value: "https://chromium.googlesource.com/chromium/web-tests"
-    version: "d2424bbd8125374af35f0b9fe9f70ec2e1277548"
+    version: "0ff2f0f61bac5cb03b7f0e1ad302c1960df45ca4"
     primary_source: true
   }
 }
